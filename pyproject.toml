@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+  "ANN",
+  "ARG",
+  "DTZ",
+  "E",
+  "F",
+  "G",
+  "I",
+  "NPY",
+  "PERF",
+  "RUF",
+  "S",
+  "UP",
+  "W",
+]
+ignore = [
+  "ANN101",
+  "ANN204",
+  "ANN401",
+  "E501",
+  "S101",
+  "S108",
+  "S603",
+  "S607",
+]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["typing_extensions"]
+force-single-line = true
+force-sort-within-sections = true
+known-first-party = ["simian", "strada"]
+known-local-folder = ["interface"]
+order-by-type = false
+required-imports = ["from __future__ import annotations"]
+single-line-exclusions = ["typing", "collections.abc"]

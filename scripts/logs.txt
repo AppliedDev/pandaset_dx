@@ -1,0 +1,1 @@
+sample_log_path
