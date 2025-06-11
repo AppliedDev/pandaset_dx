@@ -77,32 +77,39 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
     def __init__(self, data_sender: data_sender.DataSender, mailbox: mailbox.Mailbox) -> None:
         self._data_sender = data_sender
         self._mailbox = mailbox
-        self._last_position = None
+        self._last_velocity = None
 
         self._pose_proto = io_pb2.Pose()
 
     def update(self) -> None:
-        position = self._mailbox.latest_messages.get(constants.MOCK_POSE_TOPIC)
+        gps_message = self._mailbox.latest_messages.get(constants.MOCK_POSE_TOPIC)
 
-        if position is None:
+        if gps_message is None:
             raise interface_errors.InterfaceImplementationError(
                 f"Pose data not received from a log reader to the topic {constants.MOCK_POSE_TOPIC} but the `update` function on the channel handler was called."
             )
         del self._pose_proto.sections[:]
         section = self._pose_proto.sections.add()
 
-        utm_point = latlon_to_utm(position.lat, position.long)
+        utm_point = latlon_to_utm(gps_message.lat, gps_message.long)
+        next_utm_point = latlon_to_utm(gps_message.next_lat, gps_message.next_long)
 
         x = utm_point['easting']
         y = utm_point['northing']
 
-        if self._last_position is not None:
-            last_x, last_y = self._last_position
-            x_vel = ( x - last_x ) / constants.PERIOD_SECONDS
-            y_vel = ( y - last_y ) / constants.PERIOD_SECONDS
+        next_x = next_utm_point['easting']
+        next_y = next_utm_point['northing']
+
+        if x == next_x and y == next_y:
+            x_vel = self._last_velocity.tx
+            y_vel = self._last_velocity.ty
         else:
-            x_vel = -1
-            y_vel = 0
+            x_vel = ( next_x - x ) / constants.PERIOD_SECONDS
+            y_vel = ( next_y - y ) / constants.PERIOD_SECONDS
+
+        print(f"x: {x}, y: {y}")
+        print(f"next_x: {next_x}, next_y: {next_y}")
+        print(f"x_vel: {x_vel}, y_vel: {y_vel}")
 
         yaw = math.atan2(y_vel, x_vel)
 
@@ -118,7 +125,7 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
         section.state.pose.CopyFrom(proto_util.pose3d_to_proto(pose3d))
         section.state.velocity.CopyFrom(velocity3d)
 
-        self._last_position = (x, y)
+        self._last_velocity = velocity3d
 
     def get(self) -> io_pb2.Pose:
         return self._pose_proto

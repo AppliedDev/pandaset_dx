@@ -13,9 +13,11 @@ from strada.public.log_readers import log_reader_base
 
 MOCK_START_TIMESTAMP = datetime.datetime.fromtimestamp(1668741575, tz=datetime.timezone.utc)
 
-class GPSPose(typing.NamedTuple):
+class GPSPoseMessage(typing.NamedTuple):
     lat: float
     long: float
+    next_lat: float
+    next_long: float
 
 
 class MockPositionReader(log_reader_base.LogReaderBase):
@@ -46,11 +48,19 @@ class MockPositionReader(log_reader_base.LogReaderBase):
 
     def read_message(self) -> log_reader_base.LogReadType:
         gps_point = self._gps_data[self._counter]
+
+        if self._counter < len(self._gps_data) - 1:
+            next_gps_point = self._gps_data[self._counter + 1]
+        else:
+            next_gps_point = self._gps_data[self._counter]
+
         lat = gps_point['lat']
         long = gps_point['long']
+        next_lat = next_gps_point['lat']
+        next_long = next_gps_point['long']
 
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(
             milliseconds=self._counter * 100
         )
         self._counter += 1
-        return log_reader_base.LogReadType(constants.MOCK_POSE_TOPIC, GPSPose(lat,long), fake_epoch_time)
+        return log_reader_base.LogReadType(constants.MOCK_POSE_TOPIC, GPSPoseMessage(lat, long, next_lat, next_long), fake_epoch_time)
