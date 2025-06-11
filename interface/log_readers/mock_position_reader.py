@@ -18,6 +18,12 @@ class OffsetPosition(typing.NamedTuple):
     x: float
     y: float
 
+class GPSPose(typing.NamedTuple):
+    lat: float
+    long: float
+    xvel: float
+    yvel: float
+
 
 class MockPositionReader(log_reader_base.LogReaderBase):
     """This log reader generates random gps data to convert and later send to ADP."""
@@ -47,10 +53,14 @@ class MockPositionReader(log_reader_base.LogReaderBase):
 
     def read_message(self) -> log_reader_base.LogReadType:
         gps_point = self._gps_data[self._counter]
+        lat = gps_point['lat']
+        long = gps_point['long']
+        xvel = gps_point['xvel']
+        yvel = gps_point['yvel']
+
+
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(
             milliseconds=self._counter * 100
         )
         self._counter += 1
-        return log_reader_base.LogReadType(
-            constants.MOCK_POSE_TOPIC, OffsetPosition(gps_point['long'], gps_point['lat']), fake_epoch_time
-        )
+        return log_reader_base.LogReadType(constants.MOCK_POSE_TOPIC, GPSPose(lat,long,xvel,yvel), fake_epoch_time)
