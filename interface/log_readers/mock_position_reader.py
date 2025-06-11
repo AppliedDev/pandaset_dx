@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import datetime
 import typing
+import os
 
 import constants
 import data_sender as data_sender_module
@@ -26,12 +28,16 @@ class MockPositionReader(log_reader_base.LogReaderBase):
         data_sender: data_sender_module.DataSender,
     ) -> None:
         self._data_sender = data_sender
+        self._gps_data = {}
 
         self._counter = 0
 
     def open(
-        self, _path: log_reader_base.LogPath, _log_open_options: io_pb2.LogOpenOptions
+        self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
+        gps_path = os.path.join(log_open_options.path, "meta/gps.json")
+        with open(gps_path) as f:
+            self._gps_data = json.load(f)
         output = io_pb2.LogOpenOutput()
         output.start_timestamp.FromDatetime(MOCK_START_TIMESTAMP)
         return output
@@ -40,14 +46,11 @@ class MockPositionReader(log_reader_base.LogReaderBase):
         pass
 
     def read_message(self) -> log_reader_base.LogReadType:
-        if self._counter == 120:
-            return None
-
+        gps_point = self._gps_data[self._counter]
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(
             milliseconds=self._counter * 100
         )
-
         self._counter += 1
         return log_reader_base.LogReadType(
-            constants.MOCK_POSE_TOPIC, OffsetPosition(self._counter, 0), fake_epoch_time
+            constants.MOCK_POSE_TOPIC, OffsetPosition(gps_point['long'], gps_point['lat']), fake_epoch_time
         )

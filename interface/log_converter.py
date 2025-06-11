@@ -223,4 +223,5 @@ class DataExplorerInterface(stack_interface_v2.StackInterfaceV2):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    print("Starting log converter")
     customer_stack_server.start_server(DataExplorerInterface)

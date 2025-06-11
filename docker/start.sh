@@ -15,7 +15,7 @@ IMAGE="$CONTAINER_NAME:latest"
 # TODO: Mount credentials to access raw logs if necessary
 # Ex: --mount type=bind,source="$(realpath ~)"/.aws,target=/root/.aws/ \
 docker run -id --rm --network host --name "$CONTAINER_NAME" \
-  "$LOGS_MOUNT_STR" \
+  ${LOGS_MOUNT_STR:+$LOGS_MOUNT_STR} \
   --mount type=bind,source="$(realpath .)"/interface,target=/interface/ \
   --mount type=bind,source="$(realpath .)"/scripts,target=/scripts/ \
   -w /interface \
