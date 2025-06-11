@@ -25,12 +25,9 @@ def latlon_to_utm(lat, lon):
     e_sq = e**2
     n = f / (2 - f)
 
-    # Assume western hemisphere → lon is positive, so negate it to go west of Greenwich
-    lon = -lon
-
     # UTM zone
     zone_number = int((lon + 180) / 6) + 1
-    lon_origin = (zone_number - 1) * 6 - 180 + 3  # Longitude of the central meridian
+    lon_origin = (zone_number - 1) * 6 - 180 + 3  # central meridian of zone
     lon_origin_rad = math.radians(lon_origin)
 
     # Convert lat/lon to radians
@@ -80,6 +77,7 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
     def __init__(self, data_sender: data_sender.DataSender, mailbox: mailbox.Mailbox) -> None:
         self._data_sender = data_sender
         self._mailbox = mailbox
+        self._last_position = None
 
         self._pose_proto = io_pb2.Pose()
 
@@ -97,16 +95,21 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
 
         x = utm_point['easting']
         y = utm_point['northing']
-        x_vel = position.xvel
-        y_vel = position.yvel
 
-        # This needs to be swapped??
-        yaw = math.atan2(x_vel, y_vel)
+        if self._last_position is not None:
+            last_x, last_y = self._last_position
+            x_vel = ( x - last_x ) / constants.PERIOD_SECONDS
+            y_vel = ( y - last_y ) / constants.PERIOD_SECONDS
+        else:
+            x_vel = -1
+            y_vel = 0
+
+        yaw = math.atan2(y_vel, x_vel)
 
         pose3d = spatial_py.Pose3d.create_with_roll_pitch_yaw(x, y, 0, 0, 0, yaw)
         velocity3d = spatial_pb2.Screw()
-        velocity3d.tx = position.xvel
-        velocity3d.ty = position.yvel
+        velocity3d.tx = x_vel
+        velocity3d.ty = y_vel
         velocity3d.tz = 0
         velocity3d.rx = 0
         velocity3d.ry = 0
@@ -114,6 +117,8 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
 
         section.state.pose.CopyFrom(proto_util.pose3d_to_proto(pose3d))
         section.state.velocity.CopyFrom(velocity3d)
+
+        self._last_position = (x, y)
 
     def get(self) -> io_pb2.Pose:
         return self._pose_proto
