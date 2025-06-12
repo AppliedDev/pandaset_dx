@@ -53,7 +53,7 @@ class MockCameraReader(log_reader_base.LogReaderBase):
         image_name = get_number_from_counter(self._counter) + ".jpg"
         image_path = os.path.join(self._camera_images_path, image_name)
 
-        fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS)
+        fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS + 0.033)
 
         arr = cv2.imread(image_path)
         if arr is None:
@@ -61,6 +61,7 @@ class MockCameraReader(log_reader_base.LogReaderBase):
         height, width = arr.shape[:2]
 
         self._counter += 1
+        print(f"fake_epoch_time camera: {fake_epoch_time}")
         return log_reader_base.LogReadType(
             constants.MOCK_CAMERA_TOPIC,
             CameraData(image_arr=arr, height=height, width=width),

@@ -107,10 +107,6 @@ class MockPoseChannelHandler(channel_handler_base.ChannelHandlerBase):
             x_vel = ( next_x - x ) / constants.PERIOD_SECONDS
             y_vel = ( next_y - y ) / constants.PERIOD_SECONDS
 
-        print(f"x: {x}, y: {y}")
-        print(f"next_x: {next_x}, next_y: {next_y}")
-        print(f"x_vel: {x_vel}, y_vel: {y_vel}")
-
         yaw = math.atan2(y_vel, x_vel)
 
         pose3d = spatial_py.Pose3d.create_with_roll_pitch_yaw(x, y, 0, 0, 0, yaw)

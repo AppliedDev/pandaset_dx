@@ -10,11 +10,13 @@ import typing
 
 from channel_handlers import mock_camera_channel_handler
 from channel_handlers import mock_pose_channel_handler
+from channel_handlers import mock_lidar_channel_handler
 import constants
 import data_sender
 from google.protobuf import json_format
 from log_readers import mock_camera_reader
 from log_readers import mock_position_reader
+from log_readers import mock_lidar_reader
 
 from simian.public import customer_stack_server
 from simian.public import stack_interface_v2
@@ -87,12 +89,16 @@ class DataExplorerInterface(stack_interface_v2.StackInterfaceV2):
         self._log_readers: list[log_reader_base.LogReaderBase] = [
             mock_camera_reader.MockCameraReader(reader_configuration, self._data_sender),
             mock_position_reader.MockPositionReader(reader_configuration, self._data_sender),
+            mock_lidar_reader.MockLidarReader(reader_configuration, self._data_sender),
         ]
 
         self._pose_handler = mock_pose_channel_handler.MockPoseChannelHandler(
             self._data_sender, self._mailbox
         )
         self._camera_handler = mock_camera_channel_handler.MockCameraChannelHandler(
+            self._data_sender, self._mailbox
+        )
+        self._lidar_handler = mock_lidar_channel_handler.MockLidarChannelHandler(
             self._data_sender, self._mailbox
         )
 
@@ -182,6 +188,9 @@ class DataExplorerInterface(stack_interface_v2.StackInterfaceV2):
         elif topic == constants.MOCK_CAMERA_TOPIC:
             self._populate_cameras()
             seen_channels.append(constants.CAMERA_CHANNEL)
+        elif topic == constants.MOCK_LIDAR_TOPIC:
+            self._populate_lidar()
+            seen_channels.append(constants.LIDAR_CHANNEL)
 
         return self._create_output(offset=offset, seen_channels=seen_channels)
 
@@ -213,6 +222,10 @@ class DataExplorerInterface(stack_interface_v2.StackInterfaceV2):
     def _populate_pose(self) -> None:
         self._pose_handler.update()
         self._mailbox.latest_outputs[constants.POSE_CHANNEL] = self._pose_handler.get()
+
+    def _populate_lidar(self) -> None:
+        self._lidar_handler.update()
+        self._mailbox.latest_outputs[constants.LIDAR_CHANNEL] = self._lidar_handler.get()
 
     def _send_data_point(self, name: str, value: float) -> None:
         self.send_data_point(common_pb2.DataPoint(name=name, value=value))

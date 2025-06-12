@@ -63,4 +63,5 @@ class MockPositionReader(log_reader_base.LogReaderBase):
             milliseconds=self._counter * 100
         )
         self._counter += 1
+        print(f"fake_epoch_time pose: {fake_epoch_time}")
         return log_reader_base.LogReadType(constants.MOCK_POSE_TOPIC, GPSPoseMessage(lat, long, next_lat, next_long), fake_epoch_time)
