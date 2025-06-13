@@ -38,19 +38,19 @@ class MockPositionReader(log_reader_base.LogReaderBase):
     def open(
         self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
-        gps_path = os.path.join("meta", "gps.json")
-        s3_key = f"{constants.BUCKET_NAME}/{gps_path}"
+        folder_name = log_open_options.path
+        print(f"Folder name: {folder_name}")
+        s3_key = os.path.join(folder_name, "meta/gps.json")
+        print(f"S3 key: {s3_key}") # Pandaset/<id>/meta/gps.json
 
-        # Download and read JSON data directly from S3
-        json_buffer = io.BytesIO()
         try:
-            self._s3_client.download_fileobj(
+            # Get object directly from S3
+            response = self._s3_client.get_object(
                 Bucket=constants.BUCKET_NAME,
-                Key=s3_key,
-                Fileobj=json_buffer
+                Key=s3_key
             )
-            json_buffer.seek(0)
-            self._gps_data = json.load(json_buffer)
+            # Read and parse the JSON data from the response body
+            self._gps_data = json.loads(response['Body'].read().decode('utf-8'))
         except Exception as e:
             raise FileNotFoundError(f"Failed to load GPS data from S3 key {s3_key}: {str(e)}")
 

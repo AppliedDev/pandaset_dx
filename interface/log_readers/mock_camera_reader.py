@@ -44,7 +44,7 @@ class MockCameraReader(log_reader_base.LogReaderBase):
         self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
         self._camera_images_path = os.path.join(log_open_options.path, "camera/front_camera")
-        print(self._camera_images_path)
+        print(self._camera_images_path) # Pandaset/<id>/camera/front_camera
         output = io_pb2.LogOpenOutput()
         output.start_timestamp.FromDatetime(MOCK_START_TIMESTAMP)
         return output

@@ -41,7 +41,8 @@ class MockLidarReader(log_reader_base.LogReaderBase):
     def open(
         self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
-        self._lidar_clouds_path = "lidar"  # Relative path in S3
+        self._lidar_clouds_path = os.path.join(log_open_options.path, "lidar")
+        print(self._lidar_clouds_path) # Pandaset/<id>/lidar
         output = io_pb2.LogOpenOutput()
         output.start_timestamp.FromDatetime(MOCK_START_TIMESTAMP)
         return output
@@ -51,7 +52,8 @@ class MockLidarReader(log_reader_base.LogReaderBase):
 
     def read_message(self) -> log_reader_base.LogReadType:
         cloud_name = get_number_from_counter(self._counter) + ".pkl.gz"
-        s3_key = f"{constants.BUCKET_NAME}/{self._lidar_clouds_path}/{cloud_name}"
+        s3_key = os.path.join(self._lidar_clouds_path, cloud_name)
+        print(f"S3 key: {s3_key}") # Pandaset/<id>/lidar/<counter>.pkl.gz
 
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS + 0.066)
 
@@ -64,8 +66,7 @@ class MockLidarReader(log_reader_base.LogReaderBase):
                 Fileobj=compressed_buffer
             )
             compressed_buffer.seek(0)
-            
-            # Decompress the gzip data and load the pickle
+
             with gzip.GzipFile(fileobj=compressed_buffer, mode='rb') as gz:
                 data = pickle.load(gz)
         except Exception as e:
