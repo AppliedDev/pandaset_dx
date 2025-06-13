@@ -50,6 +50,8 @@ class MockCameraReader(log_reader_base.LogReaderBase):
         return output
 
     def close(self, log_close_options: io_pb2.LogCloseOptions) -> None:
+        print(f"Closing camera reader for {self._counter} messages")
+        print(f"Log close options: {log_close_options}")
         pass
 
     def read_message(self) -> log_reader_base.LogReadType:
@@ -57,13 +59,16 @@ class MockCameraReader(log_reader_base.LogReaderBase):
         s3_key = f"{self._camera_images_path}/{image_name}"
 
         # Download image data into memory buffer
-        image_buffer = io.BytesIO()
-        self._s3_client.download_fileobj(
-            Bucket=constants.BUCKET_NAME,
-            Key=s3_key,
-            Fileobj=image_buffer
-        )
-        image_buffer.seek(0)
+        try:
+            image_buffer = io.BytesIO()
+            self._s3_client.download_fileobj(
+                Bucket=constants.BUCKET_NAME,
+                Key=s3_key,
+                Fileobj=image_buffer
+            )
+            image_buffer.seek(0)
+        except Exception as e:
+            raise StopIteration()
 
         # Read image from buffer
         image_array = np.frombuffer(image_buffer.read(), np.uint8)

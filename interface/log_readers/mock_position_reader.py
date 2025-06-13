@@ -59,9 +59,14 @@ class MockPositionReader(log_reader_base.LogReaderBase):
         return output
 
     def close(self, log_close_options: io_pb2.LogCloseOptions) -> None:
+        print(f"Closing position reader for {self._counter} messages")
+        print(f"Log close options: {log_close_options}")
         pass
 
     def read_message(self) -> log_reader_base.LogReadType:
+        if self._counter >= len(self._gps_data) - 1:
+            raise StopIteration()
+
         gps_point = self._gps_data[self._counter]
 
         if self._counter < len(self._gps_data) - 1:

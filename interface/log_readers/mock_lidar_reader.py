@@ -48,29 +48,31 @@ class MockLidarReader(log_reader_base.LogReaderBase):
         return output
 
     def close(self, log_close_options: io_pb2.LogCloseOptions) -> None:
+        print(f"Closing lidar reader for {self._counter} messages")
+        print(f"Log close options: {log_close_options}")
         pass
 
     def read_message(self) -> log_reader_base.LogReadType:
+
         cloud_name = get_number_from_counter(self._counter) + ".pkl.gz"
-        s3_key = os.path.join(self._lidar_clouds_path, cloud_name)
-        print(f"S3 key: {s3_key}") # Pandaset/<id>/lidar/<counter>.pkl.gz
+        s3_key = os.path.join(self._lidar_clouds_path, cloud_name) # Pandaset/<id>/lidar/<counter>.pkl.gz
 
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS + 0.066)
 
         # Download and decompress the pickle file from S3
-        compressed_buffer = io.BytesIO()
         try:
+            compressed_buffer = io.BytesIO()
             self._s3_client.download_fileobj(
                 Bucket=constants.BUCKET_NAME,
                 Key=s3_key,
                 Fileobj=compressed_buffer
             )
             compressed_buffer.seek(0)
-
-            with gzip.GzipFile(fileobj=compressed_buffer, mode='rb') as gz:
-                data = pickle.load(gz)
         except Exception as e:
-            raise FileNotFoundError(f"Failed to load LIDAR data from S3 key {s3_key}: {str(e)}")
+            raise StopIteration()
+
+        with gzip.GzipFile(fileobj=compressed_buffer, mode='rb') as gz:
+            data = pickle.load(gz)
 
         # Data is a pandas DataFrame with columns x, y, z, i (intensity)
         # Convert to numpy arrays in the required format
@@ -80,8 +82,6 @@ class MockLidarReader(log_reader_base.LogReaderBase):
         lidar_data = LidarData(
             points=points,
         )
-
-        print(f"length of lidar data: {len(lidar_data.points)}")
 
         self._counter += 1
         return log_reader_base.LogReadType(
