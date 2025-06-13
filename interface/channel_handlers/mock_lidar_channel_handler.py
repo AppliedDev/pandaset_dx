@@ -44,8 +44,7 @@ class MockLidarChannelHandler(channel_handler_base.ChannelHandlerBase):
 
         # Create a new array with 7 columns (x,y,z,intensity,channel,instance_id,semantic_class)
         padded_points = np.zeros((points.shape[0], 7), dtype='<f')
-        padded_points[:, :3] = points  # Copy the x,y,z coordinates
-        # Other columns (intensity, channel, instance_id, semantic_class) remain 0
+        padded_points[:, :4] = points  # Copy the x,y,z,intensity coordinates
 
         # Convert from standard right-handed Object Sim coordinate frame to
         # the left-handed coordinate frame that the lidar proto expects

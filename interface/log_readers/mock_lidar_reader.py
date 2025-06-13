@@ -24,7 +24,7 @@ def get_number_from_counter(counter: int) -> str:
     return f"{counter:02d}"
 
 class LidarData(typing.NamedTuple):
-    points: np.ndarray  # Nx3 array of (x,y,z) points
+    points: np.ndarray  # Nx4 array of (x,y,z,i) points
 
 class MockLidarReader(log_reader_base.LogReaderBase):
 
@@ -72,9 +72,9 @@ class MockLidarReader(log_reader_base.LogReaderBase):
         except Exception as e:
             raise FileNotFoundError(f"Failed to load LIDAR data from S3 key {s3_key}: {str(e)}")
 
-        # Data is a pandas DataFrame with columns x, y, z, i (intensity), t (timestamp), d
+        # Data is a pandas DataFrame with columns x, y, z, i (intensity)
         # Convert to numpy arrays in the required format
-        points = data[['x', 'y', 'z']].to_numpy()  # Nx3 array of points
+        points = data[['x', 'y', 'z', 'i']].to_numpy()  # Nx4 array of points
 
         # Create LidarData object
         lidar_data = LidarData(
