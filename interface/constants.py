@@ -9,3 +9,5 @@ MOCK_CAMERA_TOPIC = "mock_camera_topic"
 MOCK_LIDAR_TOPIC = "mock_lidar_topic"
 
 PERIOD_SECONDS = 0.1
+
+BUCKET_NAME = "neural-sim-logs"

@@ -22,7 +22,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
   libxext6
 
 # Install python packages
-RUN pip install opencv-python utm more_itertools mypy coverage types-protobuf pandas
+RUN pip install opencv-python utm more_itertools mypy coverage types-protobuf pandas boto3
 
 # Copy python scripts
 COPY interface/ /interface/

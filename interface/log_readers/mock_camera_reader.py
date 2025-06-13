@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 import typing
 import os
+import boto3
+import io
 
 import constants
 import cv2
@@ -34,6 +36,7 @@ class MockCameraReader(log_reader_base.LogReaderBase):
     ) -> None:
         self._data_sender = data_sender
         self._camera_images_path = None
+        self._s3_client = boto3.client("s3")
 
         self._counter = 0
 
@@ -51,17 +54,27 @@ class MockCameraReader(log_reader_base.LogReaderBase):
 
     def read_message(self) -> log_reader_base.LogReadType:
         image_name = get_number_from_counter(self._counter) + ".jpg"
-        image_path = os.path.join(self._camera_images_path, image_name)
+        s3_key = f"{self._camera_images_path}/{image_name}"
+
+        # Download image data into memory buffer
+        image_buffer = io.BytesIO()
+        self._s3_client.download_fileobj(
+            Bucket=constants.BUCKET_NAME,
+            Key=s3_key,
+            Fileobj=image_buffer
+        )
+        image_buffer.seek(0)
+
+        # Read image from buffer
+        image_array = np.frombuffer(image_buffer.read(), np.uint8)
+        arr = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        if arr is None:
+            raise FileNotFoundError(f"Failed to decode image data from S3 key {s3_key}")
+        height, width = arr.shape[:2]
 
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS + 0.033)
 
-        arr = cv2.imread(image_path)
-        if arr is None:
-            raise FileNotFoundError(f"Failed to read image at {image_path}")
-        height, width = arr.shape[:2]
-
         self._counter += 1
-        print(f"fake_epoch_time camera: {fake_epoch_time}")
         return log_reader_base.LogReadType(
             constants.MOCK_CAMERA_TOPIC,
             CameraData(image_arr=arr, height=height, width=width),

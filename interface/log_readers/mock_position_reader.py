@@ -4,6 +4,8 @@ import json
 import datetime
 import typing
 import os
+import boto3
+import io
 
 import constants
 import data_sender as data_sender_module
@@ -30,15 +32,28 @@ class MockPositionReader(log_reader_base.LogReaderBase):
     ) -> None:
         self._data_sender = data_sender
         self._gps_data = {}
-
+        self._s3_client = boto3.client("s3")
         self._counter = 0
 
     def open(
         self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
-        gps_path = os.path.join(log_open_options.path, "meta/gps.json")
-        with open(gps_path) as f:
-            self._gps_data = json.load(f)
+        gps_path = os.path.join("meta", "gps.json")
+        s3_key = f"{constants.FOLDER_NAME}/{gps_path}"
+
+        # Download and read JSON data directly from S3
+        json_buffer = io.BytesIO()
+        try:
+            self._s3_client.download_fileobj(
+                Bucket=constants.BUCKET_NAME,
+                Key=s3_key,
+                Fileobj=json_buffer
+            )
+            json_buffer.seek(0)
+            self._gps_data = json.load(json_buffer)
+        except Exception as e:
+            raise FileNotFoundError(f"Failed to load GPS data from S3 key {s3_key}: {str(e)}")
+
         output = io_pb2.LogOpenOutput()
         output.start_timestamp.FromDatetime(MOCK_START_TIMESTAMP)
         return output
@@ -63,5 +78,4 @@ class MockPositionReader(log_reader_base.LogReaderBase):
             milliseconds=self._counter * 100
         )
         self._counter += 1
-        print(f"fake_epoch_time pose: {fake_epoch_time}")
         return log_reader_base.LogReadType(constants.MOCK_POSE_TOPIC, GPSPoseMessage(lat, long, next_lat, next_long), fake_epoch_time)
