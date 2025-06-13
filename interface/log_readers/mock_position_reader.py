@@ -39,7 +39,7 @@ class MockPositionReader(log_reader_base.LogReaderBase):
         self, _path: log_reader_base.LogPath, log_open_options: io_pb2.LogOpenOptions
     ) -> io_pb2.LogOpenOutput:
         gps_path = os.path.join("meta", "gps.json")
-        s3_key = f"{constants.FOLDER_NAME}/{gps_path}"
+        s3_key = f"{constants.BUCKET_NAME}/{gps_path}"
 
         # Download and read JSON data directly from S3
         json_buffer = io.BytesIO()

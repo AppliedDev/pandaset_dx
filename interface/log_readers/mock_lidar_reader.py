@@ -51,7 +51,7 @@ class MockLidarReader(log_reader_base.LogReaderBase):
 
     def read_message(self) -> log_reader_base.LogReadType:
         cloud_name = get_number_from_counter(self._counter) + ".pkl.gz"
-        s3_key = f"{constants.FOLDER_NAME}/{self._lidar_clouds_path}/{cloud_name}"
+        s3_key = f"{constants.BUCKET_NAME}/{self._lidar_clouds_path}/{cloud_name}"
 
         fake_epoch_time = MOCK_START_TIMESTAMP + datetime.timedelta(seconds=self._counter * constants.PERIOD_SECONDS + 0.066)
 
